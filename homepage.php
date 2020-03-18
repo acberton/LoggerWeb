@@ -26,13 +26,13 @@ if (mysqli_num_rows($result) > 0 ){
 </head>
 <body>
 <div class="container">
-<header class="blog-header py-3">
+<header class="home-header py-3">
     <div class="row flex-nowrap justify-content-between align-items-center">
       <div class="col-4 pt-1">
         <a class="text-muted" href=""><?php echo "login as " .$row["firstname"] ." ".$row["lastname"]." CWID:".$row["CWID"] ; ?></a>
       </div>
       <div class="col-5 text-center">
-        <a class="blog-header-logo text-dark" href="">Dashboard</a>
+        <a class="home-header-logo text-dark" href="">Dashboard</a>
       </div>
       <div class="col-3 d-flex justify-content-between ">
 
