@@ -18,12 +18,33 @@
 </head>
 
 <body class="text-center">
-  <form class="form-signin" action="homepage.php" method="post">
+  <form class="form-signin" method="post">
     <img class="mb-4" src="wlicon.png" alt="" width="72" height="72">
     <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
     <div class="alert alert-light" role="alert"> <?php if (isset($_GET['message'])) {
                                                     echo $_GET['message'];
                                                   } ?></div>
+    <?php
+    include "dbconnect.php";
+    session_start(); 
+      if (isset($_POST['login']) && !empty($_POST['account']) &&!empty($_POST['password'])){
+        $account = $_POST['account'];
+        $passwrd = $_POST['password'];
+        $matchsql = "SELECT username, password FROM users WHERE username ='$account' AND password ='$passwrd' ";
+        $matchraw = mysqli_query($db, $matchsql);
+        if(mysqli_num_rows($matchraw) > 0) {
+          $_SESSION['username'] =$account;
+          header("location: homepage.php");
+        }
+        else{
+          
+          $message='Wrong username or password';
+          header("location: login.php?message=$message");
+        }  
+      }
+
+    ?>
+
     <input type="acount" id="useraccount" name="account" class="form-control" placeholder="Account name" required="" autofocus="">
 
     <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required="">

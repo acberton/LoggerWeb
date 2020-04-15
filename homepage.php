@@ -11,17 +11,84 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
   <link href="homepage.css" rel="stylesheet">
 <?php
-$account=$_POST['account'];
-$passwrd=$_POST['password'];
+ session_start(); 
+$account= $_SESSION['username'];
+//$passwrd=$_POST['password'];
 include 'dbconnect.php';
-$sql = "SELECT * from users where username = '$account' and password='$passwrd'";
+$sql = "SELECT * from users where username = '$account'";
 $result = mysqli_query($db ,$sql);
 if (mysqli_num_rows($result) > 0 ){
 //output id# of login user
     $row = mysqli_fetch_assoc($result);
-        
+    $_SESSION['CWID']= $row["CWID"];   
 }
+class Course
+  {
+    public $name;
+    public $task;
+    public $detail;
+    public $duedate;
+    public $id;
 
+    function set_name($name)
+    {
+      $this->name = $name;
+    }
+    function get_name()
+    {
+      return $this->name;
+    }
+    function set_task($task)
+    {
+      $this->task = $task;
+    }
+    function get_task()
+    {
+      return $this->task;
+    }
+    function set_detail($detail)
+    {
+      $this->detail = $detail;
+    }
+    function get_detail()
+    {
+      return $this->detail;
+    }
+    function set_date($duedate)
+    {
+      $this->date = $duedate;
+    }
+    function get_date()
+    {
+      return $this->date;
+    }
+    function set_id($id)
+    {
+      $this->id = $id;
+    }
+    function get_id()
+    {
+      return $this->id;
+    }
+  }
+//save data from database to object array
+$class_array = array();  
+$query = "SELECT * FROM classes";
+foreach ($db->query($query) as $data) {
+  $class_id=$data["class_id"];
+  $query2 = "SELECT task_name, task_detail,  MAX(task_duedate) as maxdate FROM class_task Where class_id = '$class_id' group by task_name ";
+  $result2= mysqli_query($db ,$query2);
+  $data2 = mysqli_fetch_assoc($result2);
+  $class = new Course();
+  $class->set_name($data["class_name"]);
+  $class->set_task($data2["task_name"]);
+  $class->set_detail($data2["task_detail"]);
+  $class->set_date($data2["maxdate"]);
+  $class->set_id($data["class_id"]);
+  if ($class->get_name() != null) {
+    array_push($class_array, $class);
+  }
+}
 ?> 
 </head>
 <body>
@@ -47,55 +114,32 @@ if (mysqli_num_rows($result) > 0 ){
   </header>
   <div class="nav-scroller py-1 mb-2">
     <nav class="nav d-flex justify-content-between">
-      <a class="p-2 text-muted" href="">Home</a>
+      <a class="p-2 text-muted" href="homepage.php">Home</a>
       <a class="p-2 text-muted" href="">Class</a>
       
     </nav>
   </div>
 
-  <button type="button" class="btn btn-default btn-sm">
-  <h5>Add Class  <i class="fas fa-calendar-plus"></i></h5>  
-  </button>
+<a class="btn btn-default btn-sm"  href="create_class.php"> 
+  <h5>Add Class  <i class="fas fa-calendar-plus"  href="create_class.php"></i></h5>  
+</a>
 
 <div class="card-deck">
-
+<?php foreach ($class_array as $class_array) : ?>
     <div class="col-4">
 
   <div class="card">
-  <div class="card-header">CSPC362</div>
+  <div class="card-header"><?php echo $class_array->get_name(); ?></div>
     <div class="card-body">
-      <h5 class="card-title">Assignment1</h5>
-      <p class="card-text">text.</p>
-      <p class="card-text"><small class="text-muted">Due 3/9/2020</small></p>
-      <a href="#" class="btn btn-primary">Edit</a>
+      <h5 class="card-title"><?php echo $class_array->get_task(); ?></h5>
+      <p class="card-text"><?php echo $class_array->get_detail(); ?></p>
+      <p class="card-text"><small class="text-muted"><?php echo $class_array->get_date(); ?></small></p>
+      <a href="edit_task.php?class_id=<?php echo $class_array->get_id(); ?>" class="btn btn-primary" >Edit</a>
     </div>
     </div>
 
   </div>
-  <div class="col-4">
-
-  <div class="card">
-  <div class="card-header">Class</div>
-    <div class="card-body">
-      <h5 class="card-title">task</h5>
-      <p class="card-text">detail</p>
-      <p class="card-text"><small class="text-muted">date</small></p>
-      <a href="#" class="btn btn-primary">Edit</a>
-      </div>
-    </div>
-
-  </div>
-  <div class="col-4">
-
-  <div class="card">
-  <div class="card-header">Class</div>
-    <div class="card-body">
-      <h5 class="card-title">task</h5>
-      <p class="card-text">detail.</p>
-      <p class="card-text"><small class="text-muted">date</small></p>
-      <a href="#" class="btn btn-primary">Edit</a>
-    </div>
-    </div>
+<?php endforeach; ?>
 
     <br>
     <br>
