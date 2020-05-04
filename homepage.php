@@ -20,6 +20,7 @@ $result = mysqli_query($db ,$sql);
 if (mysqli_num_rows($result) > 0 ){
 //output id# of login user
     $row = mysqli_fetch_assoc($result);
+    $CWID=$row["CWID"];   
     $_SESSION['CWID']= $row["CWID"];   
 }
 class Course
@@ -72,23 +73,34 @@ class Course
     }
   }
 //save data from database to object array
-$class_array = array();  
-$query = "SELECT * FROM classes";
+$class_array = array(); 
+$query = "SELECT * FROM classes WHERE CWID = '$CWID' ";
 foreach ($db->query($query) as $data) {
+  $class = new Course(); 
   $class_id=$data["class_id"];
-  $query2 = "SELECT task_name, task_detail,  MAX(task_duedate) as maxdate FROM class_task Where class_id = '$class_id' group by task_name ";
+  $query2 = "SELECT task_name, task_detail,  task_duedate  FROM class_task 
+  Where class_id = '$class_id' and task_duedate=(SELECT MAX(task_duedate) FROM class_task WHERE class_id = '$class_id' ) ";
   $result2= mysqli_query($db ,$query2);
   $data2 = mysqli_fetch_assoc($result2);
-  $class = new Course();
   $class->set_name($data["class_name"]);
   $class->set_task($data2["task_name"]);
   $class->set_detail($data2["task_detail"]);
-  $class->set_date($data2["maxdate"]);
+  $class->set_date($data2["task_duedate"]);
   $class->set_id($data["class_id"]);
   if ($class->get_name() != null) {
     array_push($class_array, $class);
   }
 }
+$query3 = "SELECT event_name, event_detail, event_date from events 
+where CWID = '$CWID' AND event_date=(SELECT MAX(event_date) FROM events WHERE CWID = '$CWID' ) ";
+$result3 = mysqli_query($db ,$query3);
+if (mysqli_num_rows($result3) > 0 ){
+  $data3 = mysqli_fetch_assoc($result3);
+  $eventname=$data3["event_name"];
+  $eventdetail=$data3["event_detail"];
+  $eventdate=$data3["event_date"];
+}  
+
 ?> 
 </head>
 <body>
@@ -148,10 +160,10 @@ foreach ($db->query($query) as $data) {
   <div class="card">
   <div class="card-header">Events</div>
     <div class="card-body">
-      <h5 class="card-title">ECS Career Fair</h5>
-      <p class="card-text">Location</p>
-      <p class="card-text"><small class="text-muted">date</small></p>
-      <a href="#" class="btn btn-primary">Edit</a>
+      <h5 class="card-title"><?php echo $eventname; ?></h5>
+      <p class="card-text"><?php echo $eventdetail; ?></p>
+      <p class="card-text"><small class="text-muted"><?php echo $eventdate; ?></small></p>
+      <a href="edit_event.php" class="btn btn-primary">Edit</a>
     </div>
     </div>
 </div>

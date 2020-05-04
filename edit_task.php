@@ -16,6 +16,39 @@ $account= $_SESSION['username'];
 $CWID=$_SESSION['CWID'];
 $class_id= $_GET["class_id"];
 include 'dbconnect.php';
+$task_array= array();
+
+class task
+    {
+      public $name;
+      public $detail;
+      public $duedate;
+      function set_name($name)
+      {
+        $this->name = $name;
+      }
+      function get_name()
+      {
+        return $this->name;
+      }
+      function set_detail($detail)
+      {
+        $this->detail = $detail;
+      }
+      function get_detail()
+      {
+        return $this->detail;
+      }
+      function set_date($duedate)
+      {
+        $this->date = $duedate;
+      }
+      function get_date()
+      {
+        return $this->date;
+      }
+    }
+
 $sql = "SELECT * from users where username = '$account'";
 $result = mysqli_query($db ,$sql);
 if (mysqli_num_rows($result) > 0 ){
@@ -23,6 +56,24 @@ if (mysqli_num_rows($result) > 0 ){
     $row = mysqli_fetch_assoc($result);
         
 }
+$sql2 = "SELECT class_name from classes where class_id = '$class_id'";
+$result2 = mysqli_query($db ,$sql2);
+if (mysqli_num_rows($result2) > 0 ){
+  //output classname
+      $row2 = mysqli_fetch_assoc($result2);
+          
+  }
+$sql3 = "SELECT * from class_task where class_id = '$class_id'";
+    foreach ($db->query($sql3) as $data) {
+      $class_task = new task();
+      $class_task->set_name($data["task_name"]);
+      $class_task->set_detail($data["task_detail"]);
+      $class_task->set_date($data["task_duedate"]);
+      if ($class_task->get_name() != null) {
+        array_push($task_array, $class_task);
+        }
+      }    
+    
 
 ?> 
 </head>
@@ -34,7 +85,7 @@ if (mysqli_num_rows($result) > 0 ){
         <a class="text-muted" href=""><?php echo "login as " .$row["firstname"] ." ".$row["lastname"]." CWID:".$row["CWID"] ; ?></a>
       </div>
       <div class="col-5 text-center">
-        <a class="home-header-logo text-dark" href="">Add Task</a>
+        <a class="home-header-logo text-dark" href="">Add Task for <?php echo $row2["class_name"] ?> </a>
       </div>
       <div class="col-3 d-flex justify-content-between ">
 
@@ -57,6 +108,22 @@ if (mysqli_num_rows($result) > 0 ){
 
   <div class="container">
 
+<div class="card-deck">
+<?php foreach ($task_array as $task_array) : ?>
+    <div class="col-4">
+
+  <div class="card">
+  <div class="card-header"><?php echo $task_array->get_name(); ?></div>
+    <div class="card-body">
+      <p class="card-text"><?php echo $task_array->get_detail(); ?></p>
+      <p class="card-text"><small class="text-muted"><?php echo $task_array->get_date(); ?></small></p>
+    </div>
+    </div>
+
+  </div>
+<?php endforeach; ?>
+</div>
+
 <div class="row">
     <div class="col">
         <h2>Add New Task</h2>
@@ -73,10 +140,10 @@ if (mysqli_num_rows($result) > 0 ){
         $taskraw = mysqli_query($db, $tasksql);
         if(mysqli_num_rows($taskraw) > 0) {
           $errormsg="task name already exists";
-          header("location: edit_task.php?errormsg=$errormsg");
+          header("location: edit_task.php?errormsg=$errormsg&class_id=$class_id");
         }
         else{
-            $sql = "INSERT INTO class_task (task_name, task_detail, task_duedate, class_id) VALUES ('$taskname', '$taskdetail,' '$taskduedate',(SELECT class_id FROM classes WHERE class_id = '$class_id')) ";
+            $sql = "INSERT INTO class_task (task_name, task_detail, task_duedate, class_id) VALUES ('$taskname', '$taskdetail', '$taskduedate',(SELECT class_id FROM classes WHERE class_id = '$class_id')) ";
             $sqlrslt = mysqli_query($db, $sql);
 
 
@@ -84,8 +151,8 @@ if (mysqli_num_rows($result) > 0 ){
                 header("location: homepage.php");
             }
             else{
-                $errormsg="error occured";
-                header("location: edit_task.php?errormsg=$errormsg");  
+                $errormsg="error occured". mysqli_error($db);
+                header("location: edit_task.php?errormsg=$errormsg&class_id=$class_id");  
             }
         }  
       }
