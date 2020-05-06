@@ -14,11 +14,10 @@
 session_start(); 
 $account= $_SESSION['username'];
 $CWID=$_SESSION['CWID'];
-$class_id= $_GET["class_id"];
 include 'dbconnect.php';
-$task_array= array();
+$event_array= array();
 
-class task
+class event
     {
       public $name;
       public $detail;
@@ -48,7 +47,6 @@ class task
         return $this->date;
       }
     }
-
 $sql = "SELECT * from users where username = '$account'";
 $result = mysqli_query($db ,$sql);
 if (mysqli_num_rows($result) > 0 ){
@@ -56,21 +54,15 @@ if (mysqli_num_rows($result) > 0 ){
     $row = mysqli_fetch_assoc($result);
         
 }
-$sql2 = "SELECT class_name from classes where class_id = '$class_id'";
-$result2 = mysqli_query($db ,$sql2);
-if (mysqli_num_rows($result2) > 0 ){
-  //output classname
-      $row2 = mysqli_fetch_assoc($result2);
-          
-  }
-$sql3 = "SELECT * from class_task where class_id = '$class_id'";
-    foreach ($db->query($sql3) as $data) {
-      $class_task = new task();
-      $class_task->set_name($data["task_name"]);
-      $class_task->set_detail($data["task_detail"]);
-      $class_task->set_date($data["task_duedate"]);
-      if ($class_task->get_name() != null) {
-        array_push($task_array, $class_task);
+
+$sql2 = "SELECT * from events where CWID = '$CWID'";
+    foreach ($db->query($sql2) as $data) {
+      $events = new event();
+      $events->set_name($data["event_name"]);
+      $events->set_detail($data["event_detail"]);
+      $events->set_date($data["event_date"]);
+      if ($events->get_name() != null) {
+        array_push($event_array, $events);
         }
       }    
    
@@ -78,7 +70,7 @@ function cmp($a, $b) {
         return strcmp($a->get_date(), $b->get_date());
     }
     
-usort($task_array, "cmp");
+usort($event_array, "cmp");
 ?> 
 </head>
 <body>
@@ -89,7 +81,7 @@ usort($task_array, "cmp");
         <a class="text-muted" href=""><?php echo "login as " .$row["firstname"] ." ".$row["lastname"]." CWID:".$row["CWID"] ; ?></a>
       </div>
       <div class="col-5 text-center">
-        <a class="home-header-logo text-dark" href="">Add Task for <?php echo $row2["class_name"] ?> </a>
+        <a class="home-header-logo text-dark" href="">Add Event</a>
       </div>
       <div class="col-3 d-flex justify-content-between ">
 
@@ -113,41 +105,42 @@ usort($task_array, "cmp");
   <div class="container">
 
 <div class="card-deck">
-<?php foreach ($task_array as $task_array) : ?>
+<?php foreach ($event_array as $event_array) : ?>
     <div class="col-4">
 
   <div class="card">
-  <div class="card-header"><?php echo $task_array->get_name(); ?></div>
+  <div class="card-header"><?php echo $event_array->get_name(); ?></div>
     <div class="card-body">
-      <p class="card-text"><?php echo $task_array->get_detail(); ?></p>
-      <p class="card-text"><small class="text-muted"><?php echo $task_array->get_date(); ?></small></p>
+      <p class="card-text"><?php echo $event_array->get_detail(); ?></p>
+      <p class="card-text"><small class="text-muted"><?php echo $event_array->get_date(); ?></small></p>
     </div>
     </div>
 
   </div>
 <?php endforeach; ?>
 </div>
+<br>
 
 <div class="row">
     <div class="col">
-        <h2>Add New Task</h2>
+        <h2>Add New Event</h2>
     </div>
 </div>
-<br>
+
 <?php
 
-      if (isset($_POST['submit']) && !empty($_POST['task_name'])){
-        $taskname = $_POST['task_name'];
-        $taskdetail = $_POST['task_detail'];
-        $taskduedate = $_POST['due_date'];
-        $tasksql = "SELECT * FROM class_task WHERE task_name ='$taskname' AND class_id='$class_id' ";
-        $taskraw = mysqli_query($db, $tasksql);
-        if(mysqli_num_rows($taskraw) > 0) {
-          $errormsg="task name already exists";
-          header("location: edit_task.php?errormsg=$errormsg&class_id=$class_id");
+      if (isset($_POST['submit']) && !empty($_POST['event_name'])){
+        $eventname = $_POST['event_name'];
+        $eventdetail = $_POST['event_detail'];
+        $eventdate = $_POST['event_date'];
+        $eventsql = "SELECT * FROM events WHERE event_name ='$eventname' AND CWID='$CWID' ";
+        $eventraw = mysqli_query($db, $eventsql);
+        if(mysqli_num_rows($eventraw) > 0) {
+          $errormsg="event name already exists";
+          header("location: edit_task.php?errormsg=$errormsg");
         }
         else{
-            $sql = "INSERT INTO class_task (task_name, task_detail, task_duedate, class_id) VALUES ('$taskname', '$taskdetail', '$taskduedate',(SELECT class_id FROM classes WHERE class_id = '$class_id')) ";
+            $sql = "INSERT INTO events (event_name, event_detail, event_date, CWID) VALUES ('$eventname', '$eventdetail', '$eventdate','$CWID') ";
             $sqlrslt = mysqli_query($db, $sql);
 
 
@@ -156,7 +149,7 @@ usort($task_array, "cmp");
             }
             else{
                 $errormsg="error occured". mysqli_error($db);
-                header("location: edit_task.php?errormsg=$errormsg&class_id=$class_id");  
+                header("location: edit_event.php?errormsg=$errormsg");  
             }
         }  
       }
@@ -167,30 +160,22 @@ usort($task_array, "cmp");
                                                   } ?></div>
 <form  method="post" enctype="multipart/form-data">
 
-    <div class="row">
-        <div class="col-3">
-            <h2>task name:</h2>
-        </div>
-        <div class="col-3">
-            <input type="text" name="task_name" required>
-        </div>
-    </div>
+<div class="form-group">
+       <label for="events"><h2>event name:</h2></label>
+       <input type="test" class="form-control" name="event_name" placeholder="enter event name">
+</div>
 
-    <div class="row">
-        <div class="col-3">
-            <h2>task detail:</h2>
-        </div>
-        <div class="col-3">
-            <input type="text" name="task_detail" required>
-        </div>
+    <div class="form-group">
+       <label for="events"><h2>event detail:</h2></label>
+       <textarea class="form-control" name="event_detail" rows="3"></textarea>
     </div>
     
     <div class="row">
                 <div class="col-3">
-                    <h2>Due date:</h2>
+                    <h2>event date:</h2>
                 </div>
                 <div class="col-3">
-                    <input type="date" class="form-control" id="validationToolTip" name="due_date" placeholder="YYYY-MM-DD" required>
+                    <input type="date" class="form-control" id="validationToolTip" name="event_date" placeholder="YYYY-MM-DD" required>
                     <div class="invalid-tooltip">Please Enter Valid Date </div>
                 </div>
             </div>

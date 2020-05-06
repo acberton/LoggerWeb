@@ -14,8 +14,6 @@
  session_start(); 
 $account= $_SESSION['username'];
 $notinum=0;
-$noti= array();
-$noti2= array();
 include 'dbconnect.php';
 $sql = "SELECT * from users where username = '$account'";
 $result = mysqli_query($db ,$sql);
@@ -76,12 +74,13 @@ class Course
   }
 //save data from database to object array
 $class_array = array(); 
+$event_array = array();
 $query = "SELECT * FROM classes WHERE CWID = '$CWID' ";
 foreach ($db->query($query) as $data) {
   $class = new Course(); 
   $class_id=$data["class_id"];
-  $query2 = "SELECT task_name, task_detail,  task_duedate  FROM class_task 
-  Where class_id = '$class_id' and task_duedate=(SELECT MAX(task_duedate) FROM class_task WHERE class_id = '$class_id' ) ";
+  $query2 = "SELECT* from class_task 
+  Where class_id = '$class_id' AND task_duedate > CURDATE() AND task_duedate < CURDATE() + 3  ";
   $result2= mysqli_query($db ,$query2);
   $data2 = mysqli_fetch_assoc($result2);
   $class->set_name($data["class_name"]);
@@ -89,7 +88,7 @@ foreach ($db->query($query) as $data) {
   $class->set_detail($data2["task_detail"]);
   $class->set_date($data2["task_duedate"]);
   $class->set_id($data["class_id"]);
-  if ($class->get_name() != null) {
+  if ($class->get_task() != null) {
     array_push($class_array, $class);
   }
 
@@ -99,20 +98,20 @@ foreach ($db->query($query) as $data) {
   $notinum =$notinum + mysqli_num_rows($result5);
 }
 
-$query3 = "SELECT event_name, event_detail, event_date from events 
-where CWID = '$CWID' AND event_date=(SELECT MAX(event_date) FROM events WHERE CWID = '$CWID' ) ";
-$result3 = mysqli_query($db ,$query3);
-if (mysqli_num_rows($result3) > 0 ){
-  $data3 = mysqli_fetch_assoc($result3);
-  $eventname=$data3["event_name"];
-  $eventdetail=$data3["event_detail"];
-  $eventdate=$data3["event_date"];
-}  
 
 $query4 = "SELECT* from events 
 where CWID = '$CWID' AND event_date > CURDATE() AND event_date < CURDATE() + 3  ";
 $result4 = mysqli_query($db ,$query4);
 $notinum =$notinum + mysqli_num_rows($result4);
+foreach ($db->query($query4) as $data3) {
+    $events = new Course(); 
+    $events->set_task($data3["event_name"]);
+    $events->set_detail($data3["event_detail"]);
+    $events->set_date($data3["event_date"]);
+    if ($events->get_task() != null) {
+        array_push($event_array, $events);
+    }
+}
 
 ?> 
 </head>
@@ -124,7 +123,7 @@ $notinum =$notinum + mysqli_num_rows($result4);
         <a class="text-muted" href=""><?php echo "login as " .$user["firstname"] ." ".$user["lastname"]." CWID:".$user["CWID"] ; ?></a>
       </div>
       <div class="col-5 text-center">
-        <a class="home-header-logo text-dark" href="">Dashboard</a>
+        <a class="home-header-logo text-dark" href="">Notification</a>
       </div>
       <div class="col-3 d-flex justify-content-between ">
 
@@ -145,9 +144,10 @@ $notinum =$notinum + mysqli_num_rows($result4);
     </nav>
   </div>
 
-<a class="btn btn-default btn-sm"  href="create_class.php"> 
-  <h5>Add Class  <i class="fas fa-calendar-plus"  href="create_class.php"></i></h5>  
-</a>
+
+<h5>Class task in 3 days: </h5>  
+<br>
+<br>
 
 <div class="card-deck">
 <?php foreach ($class_array as $class_array) : ?>
@@ -159,26 +159,35 @@ $notinum =$notinum + mysqli_num_rows($result4);
       <h5 class="card-title"><?php echo $class_array->get_task(); ?></h5>
       <p class="card-text"><?php echo $class_array->get_detail(); ?></p>
       <p class="card-text"><small class="text-muted"><?php echo $class_array->get_date(); ?></small></p>
-      <a href="edit_task.php?class_id=<?php echo $class_array->get_id(); ?>" class="btn btn-primary" >Edit</a>
+
     </div>
     </div>
 
   </div>
 <?php endforeach; ?>
+</div>
+<br>
+<br>
 
-    <br>
-    <br>
+<h5>Events in 3 days: </h5> 
+<br>
+<br>
+<div class="card-deck">
+<?php foreach ($event_array as $event_array) : ?>
+    
 
-  </div>
   <div class="card">
   <div class="card-header">Events</div>
     <div class="card-body">
-      <h5 class="card-title"><?php echo $eventname; ?></h5>
-      <p class="card-text"><?php echo $eventdetail; ?></p>
-      <p class="card-text"><small class="text-muted"><?php echo $eventdate; ?></small></p>
-      <a href="edit_event.php" class="btn btn-primary">Edit</a>
+      <h5 class="card-title"><?php echo $event_array->get_task(); ?></h5>
+      <p class="card-text"><?php echo $event_array->get_detail(); ?></p>
+      <p class="card-text"><small class="text-muted"><?php echo $event_array->get_date(); ?></small></p>
+
     </div>
-    </div>
+    
+
+  </div>
+<?php endforeach; ?>
 </div>
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
